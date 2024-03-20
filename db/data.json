@@ -1,0 +1,26 @@
+{
+  "fonoaudiologia": {
+    "Profesional1": {
+      "horas": ["09:00", "10:00", "11:00"]
+    },
+    "Profesional2": {
+      "horas": ["09:30", "10:30", "11:30"]
+    }
+  },
+  "terapia_ocupacional": {
+    "Profesional3": {
+      "horas": ["08:00", "09:00", "10:00"]
+    },
+    "Profesional4": {
+      "horas": ["08:30", "09:30", "10:30"]
+    }
+  },
+  "kinesiologia": {
+    "Profesional5": {
+      "horas": ["12:00", "13:00", "14:00"]
+    },
+    "Profesional6": {
+      "horas": ["12:30", "13:30", "14:30"]
+    }
+  }
+}
