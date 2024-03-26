@@ -1,89 +1,100 @@
-// Función para llenar el select de profesionales según la especialidad seleccionada
-async function llenarProfesionales() {
+// Función para llenar el select de profesionales y horas según la especialidad seleccionada
+async function llenarProfesionalesYHoras() {
     try {
-        const especialidad = document.getElementById('especialidad').value; 
-        const selectProfesional = document.getElementById('profesional'); 
-        selectProfesional.innerHTML = '';
+        const especialidad = document.getElementById('especialidad').value;
+        const selectProfesional = document.getElementById('profesional');
+        const selectHora = document.getElementById('hora');
 
         // Realizar la petición para obtener los datos del JSON
-        const response = await fetch('../db/data.json'); 
+        const response = await fetch('../db/data.json');
         if (!response.ok) {
-            throw new Error('Error al cargar los datos'); 
+            throw new Error('Error al cargar los datos');
         }
 
         const data = await response.json(); // Convertir la respuesta a JSON
-        const profesionales = data[especialidad]; 
+        const profesionales = data[especialidad];
+
+        // Limpiar select de profesionales y horas
+        selectProfesional.innerHTML = '';
+        selectHora.innerHTML = '';
+
+        // Llenar select de profesionales y horas
         Object.keys(profesionales).forEach(profesional => {
-            const option = document.createElement('option');
-            option.value = profesional; 
-            selectProfesional.add(option);
+            const optionProfesional = document.createElement('option');
+            optionProfesional.value = profesional;
+            optionProfesional.textContent = profesional; // Agregar el nombre del profesional como texto de la opción
+            selectProfesional.add(optionProfesional);
+
+            // Llenar select de horas
+            const horasDisponibles = profesionales[profesional].horas;
+            horasDisponibles.forEach(hora => {
+                const optionHora = document.createElement('option');
+                optionHora.text = hora;
+                optionHora.value = hora;
+                selectHora.add(optionHora);
+            });
         });
 
-       
-    } catch (error) { 
-        console.error('Error:', error); 
-    } finally { // Ejecutar código independientemente de si hubo un error o no
-        console.log('Fin de la función llenarProfesionales'); 
+    } catch (error) {
+        console.error('Error:', error);
+    } finally {
+        console.log('Fin de la función llenarProfesionalesYHoras');
     }
 }
 
-document.getElementById('especialidad').addEventListener('change', llenarProfesionales);
+document.getElementById('especialidad').addEventListener('change', llenarProfesionalesYHoras);
 
-// Función para llenar el select de horas según la especialidad, profesional y fecha seleccionados
-async function llenarHoras() {
-    try {
-        const selectHora = document.getElementById('hora'); 
-        const fechaInput = document.getElementById('fecha');
-        const fecha = new Date(fechaInput.value);
-        const diaSemana = fecha.getDay(); 
+// Función para guardar la reserva en el almacenamiento local
+function guardarReserva(reserva) {
+    let reservas = JSON.parse(localStorage.getItem('reservas')) || []; // Obtener las reservas almacenadas o crear un array vacío si no hay reservas
 
-        // Verificar si la fecha está dentro del rango de marzo y abril de 2024 y es un día laborable
-        if (
-            fecha.getFullYear() === 2024 &&
-            (fecha.getMonth() === 2 || fecha.getMonth() === 3) && 
-            diaSemana >= 0 && diaSemana <= 4 
-        ) {
-            const especialidad = document.getElementById('especialidad').value;
-            const profesional = document.getElementById('profesional').value; 
-
-            
-            const response = await fetch('../db/data.json'); 
-            if (!response.ok) { 
-                throw new Error('Error al cargar los datos'); 
-            }
-
-            const data = await response.json(); 
-            const horasDisponibles = data[especialidad][profesional].horas; 
-
-            // Llenar el select de horas
-            selectHora.innerHTML = ''; 
-            horasDisponibles.forEach(hora => { 
-                const option = document.createElement('option'); 
-                option.text = hora; 
-                option.value = hora; 
-                selectHora.add(option); 
-            });
-        } else { // Si la fecha no cumple con los criterios establecidos
-            selectHora.innerHTML = ''; // Limpiar el select de horas
-            throw new Error('Fecha no válida'); // Lanzar un error indicando que la fecha no es válida
-        }
-    } catch (error) { 
-        // Mostrar la alerta solo si la excepción se debe a una fecha no válida
-        if (error.message === 'Fecha no válida') {
-            console.error('Error:', error);
-            Swal.fire({ 
-                icon: 'warning',
-                title: 'No existen horas disponibles', 
-                text: 'No existen horas disponibles para la fecha seleccionada.', 
-                confirmButtonText: 'Entendido' 
-            });
-        } else { // Si el error no está relacionado con una fecha no válida
-            console.error('Error:', error); 
-        }
-    } finally { // Ejecutar código independientemente de si hubo un error o no
-        console.log('Fin de la función llenarHoras'); 
-    }
+    reservas.push(reserva); // Agregar la nueva reserva
+    localStorage.setItem('reservas', JSON.stringify(reservas)); // Guardar las reservas actualizadas en el almacenamiento local
 }
 
-// Evento para actualizar las horas disponibles al cambiar la fecha
-document.getElementById('fecha').addEventListener('change', llenarHoras); // Agregar un evento de cambio a la fecha que llame a la función llenarHoras
+// Función para obtener y mostrar todas las reservas almacenadas
+function mostrarReservas() {
+    const reservas = JSON.parse(localStorage.getItem('reservas')) || []; 
+    const reservasContainer = document.getElementById('reservas-container');
+    reservasContainer.innerHTML = ''; 
+
+    reservas.forEach((reserva, index) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${index + 1}</td>
+            <td>${reserva.nombreNino}</td>
+            <td>${reserva.edadNino}</td>
+            <td>${reserva.nombreCuidador}</td>
+            <td>${reserva.telefono}</td>
+            <td>${reserva.email}</td>
+            <td><button class="btn btn-primary btn-sm" onclick="editarReserva(${index})">Editar</button></td>
+            <td><button class="btn btn-danger btn-sm" onclick="borrarReserva(${index})">Borrar</button></td>
+        `;
+        reservasContainer.appendChild(row);
+    });
+}
+
+// Función para eliminar una reserva específica
+function borrarReserva(index) {
+    const reservas = JSON.parse(localStorage.getItem('reservas')) || [];
+    reservas.splice(index, 1); // Eliminar la reserva del array
+    localStorage.setItem('reservas', JSON.stringify(reservas)); // Actualizar las reservas en el almacenamiento local
+    mostrarReservas(); // Mostrar las reservas actualizadas
+}
+
+// Función para editar una reserva específica
+function editarReserva(index) {
+    const reservas = JSON.parse(localStorage.getItem('reservas')) || [];
+    const reserva = reservas[index];
+
+    // Llenar el formulario con los datos de la reserva seleccionada
+    document.getElementById("nombre-nino").value = reserva.nombreNino;
+    document.getElementById("edad-nino").value = reserva.edadNino;
+    document.getElementById("nombre-cuidador").value = reserva.nombreCuidador;
+    document.getElementById("telefono").value = reserva.telefono;
+    document.getElementById("email").value = reserva.email;
+
+    // Eliminar la reserva antigua después de editar
+    reservas.splice(index, 1);
+    localStorage.setItem('reservas', JSON.stringify(reservas));
+}

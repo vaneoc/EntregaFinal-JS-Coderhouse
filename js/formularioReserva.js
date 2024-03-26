@@ -1,3 +1,26 @@
+document.getElementById('fecha').addEventListener('change', function() {
+    // Obtener la fecha seleccionada por el usuario
+    const fechaSeleccionada = this.value;
+
+    // Validar la fecha seleccionada
+    const diaSeleccionado = new Date(fechaSeleccionada).getDay(); 
+    const mesSeleccionado = new Date(fechaSeleccionada).getMonth();
+
+    if (diaSeleccionado === 5 || diaSeleccionado === 6 || (mesSeleccionado !== 2 && mesSeleccionado !== 3)) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Oops..',
+            text: 'Lo sentimos, no se permiten reservas para la fecha seleccionada. Por favor elige otra fecha.',
+        });
+
+        // Deshabilitar el campo de selección de horas
+        document.getElementById('hora').disabled = true;
+    } else {
+        // Habilitar el campo de selección de horas si la fecha es válida
+        document.getElementById('hora').disabled = false;
+    }
+});
+
 document.getElementById('reservar-btn').addEventListener('click', function(event) {
     event.preventDefault(); 
 
@@ -7,6 +30,17 @@ document.getElementById('reservar-btn').addEventListener('click', function(event
     const fecha = document.getElementById('fecha').value;
     const hora = document.getElementById('hora').value;
 
+    // Validar que todos los campos del formulario estén completos
+    if (especialidad === "" || profesional === "" || fecha === "" || hora === "") {
+        Swal.fire({
+            icon: 'error',
+            title: 'Oops...',
+            text: 'Por favor completa todos los campos.',
+        });
+        return;
+    }
+
+    // Mostrar alerta al usuario para confirmar la reserva
     Swal.fire({
         icon: 'question', 
         title: 'Confirmar reserva', 
@@ -23,17 +57,26 @@ document.getElementById('reservar-btn').addEventListener('click', function(event
                 fecha: fecha, 
                 hora: hora 
             };
-            localStorage.setItem('reserva', JSON.stringify(reserva)); 
+            guardarReserva(reserva); 
 
-            
-            setTimeout(() => { // Simular un tiempo de espera antes de mostrar la alerta de éxito
+            // Mostrar la alerta de éxito y redirigir a la página de inicio después de un tiempo de espera
+            setTimeout(() => {
                 const mensaje = `La hora para ${especialidad} con ${profesional} el ${fecha} a las ${hora} ha sido reservada con éxito. Se enviará un correo con la información de la cita.`; 
                 Swal.fire({
                     icon: 'success',
                     title: 'Reserva exitosa',
                     text: mensaje
+                }).then(() => {
+                    // Redirigir a la página de inicio después de mostrar la alerta de éxito
+                    window.location.href = "/index.html";
                 });
             }, 2000); // Simulación de tiempo de espera para el envío de correo (2 segundos)
         }
     });
 });
+
+function guardarReserva(reserva) {
+    let reservas = JSON.parse(localStorage.getItem('reservas')) || [];
+    reservas.push(reserva);
+    localStorage.setItem('reservas', JSON.stringify(reservas));
+}
